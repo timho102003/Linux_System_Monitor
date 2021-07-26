@@ -26,7 +26,22 @@ vector<Process>& System::Processes() {
     for (int pid: pids){
         processes_.push_back(Process(pid));
     }
-    std::sort(processes_.begin(), processes_.end());
+    auto it = processes_.begin();
+
+    while (it != processes_.end())
+    {
+        // remove odd numbers
+        if ((*it).Command()=="")
+        {
+            // `erase()` invalidates the iterator, use returned iterator
+            it = processes_.erase(it);
+        }
+        // Notice that the iterator is incremented only on the else part (why?)
+        else {
+            ++it;
+        }
+    }
+    std::sort(processes_.begin(), processes_.end(), std::greater<>());
     return processes_;
 }
 
