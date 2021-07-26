@@ -106,12 +106,12 @@ long LinuxParser::Jiffies() {
   string fileName{kProcDirectory + kStatFilename};
   string line, value;
   std::ifstream stream(fileName);
+  float tot_jiffie=0;
+  bool b_cpu_line=false;
   if (stream.is_open()) {
     while(std::getline(stream, line)){
       std::istringstream linestream(line);
-      bool b_cpu_line=false;
       vector<float> values;
-      float tot_jiffie=0;
       while(linestream >> value){
         if(value=="cpu"){
           b_cpu_line=true;
@@ -127,6 +127,7 @@ long LinuxParser::Jiffies() {
       return (long)tot_jiffie;
     }
   }
+  return (long)tot_jiffie;
 }
 
 // TODO: Read and return the number of active jiffies for a PID
@@ -152,30 +153,27 @@ long LinuxParser::ActiveJiffies() {
   string fileName{kProcDirectory + kStatFilename};
   string line, value;
   std::ifstream stream(fileName);
+  bool b_cpu_line=false;
+  float active_jiffie=0;
   if (stream.is_open()) {
     while(std::getline(stream, line)){
       std::istringstream linestream(line);
-      bool b_cpu_line=false;
       vector<float> values;
-      float active_jiffie=0;
-      int cnt=0;
       while(linestream >> value){
         if(value=="cpu"){
           b_cpu_line=true;
           continue;
         }
-        // if (b_cpu_line) {
-        //   cnt+=1;
-        // }
-
-        // if (cnt==3) active_jiffie=std::stof(value);
-
+        if(b_cpu_line){
+          values.push_back(std::stof(value));
+        }
       }
       b_cpu_line=false;
       active_jiffie = (values[1] + values[2] + values[3] + values[6] + values[7] + values[8]) / (float)sysconf(_SC_CLK_TCK);
       return (long)active_jiffie;
     }
   }
+  return (long)active_jiffie;
 }
 
 // TODO: Read and return the number of idle jiffies for the system
@@ -183,23 +181,17 @@ long LinuxParser::IdleJiffies() {
   string fileName{kProcDirectory + kStatFilename};
   string line, value;
   std::ifstream stream(fileName);
+  float idle_jiffie=0;
   if (stream.is_open()) {
     while(std::getline(stream, line)){
       std::istringstream linestream(line);
       bool b_cpu_line=false;
       vector<float> values;
-      float idle_jiffie=0;
-      int cnt=0;
       while(linestream >> value){
         if(value=="cpu"){
           b_cpu_line=true;
           continue;
         }
-        // if (b_cpu_line) {
-        //   cnt+=1;
-        // }
-
-        // if (cnt==4) idle_jiffie=std::stof(value);
         if (b_cpu_line){
           values.push_back(std::stof(value));
         }
@@ -209,6 +201,7 @@ long LinuxParser::IdleJiffies() {
       return (long)idle_jiffie;
     }
   }
+  return (long)idle_jiffie;
 }
 
 // TODO: Read and return CPU utilization
@@ -303,14 +296,12 @@ string LinuxParser::Ram(int pid) {
 string LinuxParser::Uid(int pid) {
   string fileName{kProcDirectory + to_string(pid) + kStatusFilename};
   string line="", uid="";
-  
   std::ifstream uidStream(fileName);
   if (uidStream.is_open()){
     vector<string> values={};
     int cnt=0;
     while(std::getline(uidStream, line)){
       std::istringstream linestream(line);
-      bool b_uid_line=false;
       string value, uid;
       cnt+=1;
       if (cnt>9) break;
