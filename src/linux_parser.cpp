@@ -118,7 +118,7 @@ long LinuxParser::Jiffies() {
           continue;
         }
         if(b_cpu_line){
-          values.push_back(std::stof(value));
+          values.emplace_back(std::stof(value));
         } 
       }
       b_cpu_line=false;
@@ -139,7 +139,7 @@ long LinuxParser::ActiveJiffies(int pid) {
   if (stream.is_open()) {
     string value;
     while(std::getline(stream, value, ' ')){
-      values.push_back(value);
+      values.emplace_back(value);
     }
   }
   float total_time = std::stof(values[13]) + std::stof(values[14]);
@@ -193,7 +193,7 @@ long LinuxParser::IdleJiffies() {
           continue;
         }
         if (b_cpu_line){
-          values.push_back(std::stof(value));
+          values.emplace_back(std::stof(value));
         }
       }
       b_cpu_line=false;
@@ -216,7 +216,7 @@ vector<string> LinuxParser::CpuUtilization() {
     float delta = (float)uptime - (float)start_time;
     if(delta!=0){
       float cpu_utilize = (float)total_time_sec / delta;
-      pid_cpu_usage.push_back(to_string(cpu_utilize));
+      pid_cpu_usage.emplace_back(to_string(cpu_utilize));
     }
   } 
   return pid_cpu_usage;
@@ -267,7 +267,7 @@ string LinuxParser::Command(int pid) {
   if (cmdStream.is_open()){
     std::getline(cmdStream, line);
   }
-  return line;
+  return line.substr(0, 50);
 }
 
 // TODO: Read and return the memory used by a process
@@ -281,7 +281,8 @@ string LinuxParser::Ram(int pid) {
     while (std::getline(stream, line)) {
         std::istringstream linestream(line);
         while (linestream >> keys >> values) {
-        if (keys == "VmSize:") {
+        //  replace VmSize with VmRSS to get the exact physical memory being used as a part of Physical RAM
+        if (keys == "VmRSS:") {
           mem = std::stof(values) / 1000;
           break;
         }
@@ -307,7 +308,7 @@ string LinuxParser::Uid(int pid) {
       if (cnt>9) break;
       while(linestream >> value){
         if (cnt==9){
-          values.push_back(value);
+          values.emplace_back(value);
         }
       }
     }
@@ -327,7 +328,7 @@ string LinuxParser::User(int pid) {
       vector<string> values={};
       std::istringstream linestream(line);
       while(std::getline(linestream, value, ':')){
-        values.push_back(value);
+        values.emplace_back(value);
       }
       if (values[2]==uid) usr=values[0];
     }
@@ -345,7 +346,7 @@ long LinuxParser::UpTime(int pid) {
   if (uptimeStream.is_open()){
     vector<string> values;
     while(std::getline(uptimeStream, value, ' ')){
-      values.push_back(value);
+      values.emplace_back(value);
     }
     uptime = std::stof(values[21]) / (float)sysconf(_SC_CLK_TCK);
   }
